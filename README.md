@@ -122,7 +122,7 @@ Enrichi la table `user` (lors des connexions)
 
 **pusher** Chargé de pousser les modifications serveur vers le client à l'aide de socket.io
 Exposé par NGINX
-Ecoute les modifications sur les tables `audit`,`profil_acl`, `profil_user`
+Ecoute les modifications sur les tables `audit`,`profil_filtered_model`, `profil_user`, `filtered_model`
 
  
 **monitor** Chargé de donner des information sur les autres services
