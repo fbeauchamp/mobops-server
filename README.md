@@ -36,7 +36,7 @@ Tous les appels à l'api sont maintenant servis par le script **pulled.js** . Le
 * `GET /alert/login/:token` : connecte l'utilisateur à mobops et le redirige vers la page d'accueil
 
 ####SIG
-4
+
 * `GET /buildings/:lng_min/:lng_max/:lat_min/:lat_max` : retourne le GeoJSON des batiments de ce secteur
 * `GET /tiles/:z/:x/:y.png` : affiche une tuile du fond de carte
 * `GET /tiles/metadata.json` : retourne les metadata associés aux tuiles
