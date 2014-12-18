@@ -103,26 +103,31 @@ Toutes les tables ont des triggers qui émettent des évenements lors d'insertio
 
 ###Micro services
 **synchronizator** . Chargé de récuperer les données du système d'information d'alerte. 
-Renseigne les tables `dipos`, `agent`, `vehicle`, `operation`, `message`
+
+* Renseigne les tables `dipos`, `agent`, `vehicle`, `operation`, `message`
  
 **authorizator**  Chargé de construire de matérialiser les différent niveau d'accès aux données, et d'associer ces données filtrées aux profils. 
-Ecoute les modifications sur les tables `dispo`, `agent`, `vehicle`,`operation`,`line`,`file` 
-Renseigne les table `filtered_model` et `profil_acl`. Rempli la table `profil_user` uniquement concernant le profil COS spécifique à  une opération 
+
+* Ecoute les modifications sur les tables `dispo`, `agent`, `vehicle`,`operation`,`line`,`file` 
+* Renseigne les table `filtered_model` et `profil_filtered_model`. Rempli la table `profil_user` uniquement concernant le profil COS spécifique à  une opération 
 
 **profilator** Chargé d'associer les utilisateurs aux profils.
-Ecoute les tables `reference.agent`, `reference.agent_qualification`, `reference.qualification`, `dispo`
-Rempli la table `profil_user`
+
+* Ecoute les tables `reference.agent`, `reference.agent_qualification`, `reference.qualification`, `dispo`
+* Rempli la table `profil_user`
 
 **pulled** Chargé de répondre aux requêtes HTTP
-Exposé sur internet par nginx
-Interroge les tables `filtered_model`,`profil_user`,`dispo`,`user` ,`alert`,`alert_message`
-Interroge l'active directory , le fichier mbtile,  le SIG et l'extranet
-Rempli les tables `file` ( lors de l'upload d'un fichier) , `line` (lors d'un dessin de Sitac)
-Enrichi la table `user` (lors des connexions)
+
+* Exposé sur internet par nginx
+* Interroge les tables `filtered_model`, `profil_user`, `dispo`, `user` , `alert`, `alert_message`
+* Interroge l'active directory , le fichier mbtile,  le SIG et l'extranet
+* Rempli les tables `file` ( lors de l'upload d'un fichier) , `line` (lors d'un dessin de Sitac)
+* Enrichi la table `user` (lors des connexions)
 
 **pusher** Chargé de pousser les modifications serveur vers le client à l'aide de socket.io
-Exposé par NGINX
-Ecoute les modifications sur les tables `audit`,`profil_filtered_model`, `profil_user`, `filtered_model`
+
+* Exposé par NGINX
+* Ecoute les modifications sur les tables `audit`,`profil_filtered_model`, `profil_user`, `filtered_model`
 
  
 **monitor** Chargé de donner des information sur les autres services
