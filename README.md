@@ -24,30 +24,58 @@ Puis lancer les commande suivantes :
     pm2 start pm2.json
 
 ##API
+Tous les appels à l'api sont maintenant servis par le script **pulled.js** . Les réponses sont toujours au format  json
+####Gestion des alertes
 
-`GET /login.json` **authenticator** Vérifie si l'utilisateur courant a une session express active. Renvoie `{status:'authenticated',authenticated:true}`  dans ce cas, `{status:'not authenticated',authenticated:false}` sinon.  
+* `PUT /alert/` : l'utilisateur connecté s'inscrit à une alerte
+* `GET /alert/` : retourne les alerts de l'utilisateur
+* `DELETE /alert/:id/` : l'utilisateur supprime une alerte
+* `POST /alert/enable/:id` : l'utilisateur connecté active une de ses alerte
+* `POST /alert/disable/:id` : l'utilisateur connecté deactive une de ses alerte
+* `GET /alert/message/:token` : affiche un message d'une alerte. Mets à jour le champ `ack_time` de ce message pour le marqué comme lu
+* `GET /alert/login/:token` : connecte l'utilisateur à mobops et le redirige vers la page d'accueil
 
-`POST /login.json` **authenticator** Paramètres login et password. Authentifie l'utilisateur auprès de l'Active Directory, le crée dans la base de données à partir de l'AD si besoin. Cre la session dasn express.
+####SIG
+4
+* `GET /buildings/:lng_min/:lng_max/:lat_min/:lat_max` : retourne le GeoJSON des batiments de ce secteur
+* `GET /tiles/:z/:x/:y.png` : affiche une tuile du fond de carte
+* `GET /tiles/metadata.json` : retourne les metadata associés aux tuiles
+* `GET /geosearch?X=X_LAMBERT&Y_Y_LAMBERT` : retourne els points d'intéret autour d'un point *Attention, coordonnées en lambert 93*
 
+####Indicateurs  de contexte
+
+* `GET /context` : retourne les indicateurs de contexte (vigipirate , crue, ...)
+* `POST /context` : cré ou modifie un  indicateur de contexte. Seulement pour les utilisateurs avec un profil admin
+
+####Authentification 
+
+* `GET /login.json`   Vérifie si l'utilisateur courant a une session express active. Renvoie `{status:'authenticated',authenticated:true}`  dans ce cas, `{status:'not authenticated',authenticated:false}` sinon.  
+* `POST /login.json`  Paramètres login et password. Authentifie l'utilisateur auprès de l'Active Directory, le crée dans la base de données à partir de l'AD si besoin. Cre la session dasn express.
+* `GET /logout` : déconnecte l'utilisateur
+
+#### Opérations
 `GET /operation/current.json` **pulled**  Renvoi la liste des opérations actives accessibles par l'utilisateur en fonction de son authentification (filtrage des attributs, ajout du délai). Ceci permet de bénéficier de la compression json pour le premier chargement plutôt que de tout passer par les websocket
+####Dispo
 
-`PUT /poly` **pulled**  paramètres : lats, lngs, color, pattern, operation_id. Crée une nouvelle plyline dans la base de données. utilisé pour gérer les dessins de SITAC.
+* `GET /dispo` : retourne le listing des agents dispos avec leur centre et leur qualif
+* `GET /dispo/log/:center_id` : retourne les changement au cours des 6 dernières heures sur la dispo de ce centre
+* 
+#### Upload
 
-`DELETE /poly` **pulled** paramètre : id. Efface une polyline.
+* `POST /upload` **pulled** paramètes : operation_id, des pièces jointes. upload un fichier. Si il s'agit d'une image, il crée une miniature.
+* `GET /upload/:file_id` **pulled**  télécharge un fichier uploadé précédemment.
 
-`POST /upload` **pulled** paramètes : operation_id, des pièces jointes. upload un fichier. Si il s'agit d'une image, il crée une miniature.
+#### Sitac
 
-`GET /upload/:file_id` **pulled**  télécharge un fichier uploadé précédemment.
+* `PUT /poly` **pulled**  paramètres : lats, lngs, color, pattern, operation_id. Crée une nouvelle plyline dans la base de données. utilisé pour gérer les dessins de SITAC.
+* `DELETE /poly` **pulled** paramètre : id. Efface une polyline.
 
-`GET /dispo`  **pulled** télécharge au format json les cumuls de dispo par centres
+#### Photos des utilisateurs
+`GET /mugshot/:matricule/avatar.png` : retourne la photo de l'utilisateur en fonction de son matricule
 
-`GET /dispo/:center_id` **pulled** Télécharge au format json le détail de la dispo d'un centre.
-
-`GET /mbtiles/:z/:x/:y.png` **tileserver** . retourne une tuile de la carte. format png, projection WGS84
-
-`GET /mbtiles/metadata.json` **tileserver** . retourne les metadatas associé au mbtile.
-
-`GET /node/wms_search?X=:x&Y=:y`  **tileserver** fait une requete pour savoir quels sont les point notable autour de x et y. projection lambert93.
+#### Interface avec l'extranet
+`GET /portail/consigne/:center_id` : retourne un json des pages dans le dossier du centre sur l'extranet. Utilisé pour récupérer des consignes
+ 
 
 ##Architecture
 
@@ -87,24 +115,16 @@ Rempli la table `profil_user`
 
 **pulled** Chargé de répondre aux requêtes HTTP
 Exposé sur internet par nginx
-Interroge les tables `filtered_model`,`profil_user`,`dispo`
+Interroge les tables `filtered_model`,`profil_user`,`dispo`,`user` ,`alert`,`alert_message`
+Interroge l'active directory , le fichier mbtile,  le SIG et l'extranet
 Rempli les tables `file` ( lors de l'upload d'un fichier) , `line` (lors d'un dessin de Sitac)
-
+Enrichi la table `user` (lors des connexions)
 
 **pusher** Chargé de pousser les modifications serveur vers le client à l'aide de socket.io
 Exposé par NGINX
 Ecoute les modifications sur les tables `audit`,`profil_acl`, `profil_user`
 
-
-**authenticator** Chargé d'authentifier les utilisateurs.
-Exposé par NGINX.
-Interroge l'active directory
-Enrichi la table `user` 
-
-**tileserver** Chargé de fournir les données carto.
-Exposé par NGINX.
-Interroge le fichier mbtile
-
+ 
 **monitor** Chargé de donner des information sur les autres services
 
 ###Frontal
@@ -122,4 +142,4 @@ Nginx sert aussi les fichiers statiques du client:
  
 * porter le format mbtile vers postgresql pour diminuer les prerequis
 * refactor /node/wms_search pour ne plus dépendre du'n serveur tiers, et rester en wgs84
-* refacto la gestion de la sitac pour qu'elle soit gérée par tileserver
+
